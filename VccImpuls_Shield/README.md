@@ -13,7 +13,7 @@ The following IO-functions of the VccImpuls shield are located on the edge of th
 * D6 ......... self locking pin (as long as D6 is 1, the power supply stays on)
 * D7 ......... green LED (Duo-LED)
 * D8 ......... red LED (Duo-LED)
-* D0-RST .. a connection D0 - RST allows the D1 mini to wake up afer deep sleep
+* D0-RST .. a connection D0 - RST allows the D1 mini to wake up after deep sleep
 * A0 ......... measuring of the input voltage
 
 Using a red-green duo-led, a yellow lightning is possible as well.
@@ -67,7 +67,7 @@ _Bild: assembly diagram_
 4. Elko C1   
 5. Transistor T1 to T5   
 6. Diodes D1, D2   
-7. All restistors   
+7. All resistors   
 8. Elko C2   
 9. Pin header K3   
 10. Female connector strip 8-pin with long electrical connections
