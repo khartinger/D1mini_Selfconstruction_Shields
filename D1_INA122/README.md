@@ -125,35 +125,35 @@ _Figure 7: Relationship between current value iAC and read-in analog value ain: 
 
 &nbsp;
 
-| Get measured values | |
+| Get measured values          |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
-| + float getCurrent() | measure alternating current and return the value in amperes |
-| + int getLastAin() | ADC value of the last measurement (0...1023 or 4095) |
-| + bool isOn() | true: current is on, i.e. gr&ouml;&szlig;er as the "on" value (>aOn_) (L&ouml;st measurement off) |
-| + bool isOff() | true: current is off, i.e. less than or equal to the "On" value (<=aOn_) (L&ouml;st measurement off) |
-| + bool isChange() | true: &Change of the on/off state since the last query (L&ouml;st measurement off) |
-+ float getCurrentOn() | current limit for the "on" state |
+| + float getCurrent()         | measure alternating current and return the value in amperes  |
+| + int getLastAin()           | ADC value of the last measurement (0...1023 or 4095) |
+| + bool isOn()                | true: current is on, i.e. gr&ouml;&szlig;er as the "on" value (>aOn_) (L&ouml;st measurement off)    |
+| + bool isOff()               | true: current is off, i.e. less than or equal to the "On" value (<=aOn_) (L&ouml;st measurement off) |
+| + bool isChange()            | true: &Change of the on/off state since the last query (L&ouml;st measurement off) |
+| + float getCurrentOn()         | current limit for the "on" state |
 
 &nbsp;
 
-| Set parameters | |
+| Set parameters               |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
-+ void setCurrentOn(float onAmpere) | Sets the current limit for "on" |
-| + bool setx4max(int x4max) | Sets the ADC value for the maximum current (e.g. 2 A). Simple adjustment of a final value |
-| + void setNumberOf50HzPeriods(int periods) | Sets the number of 50Hz periods to be measured. The duration of the measurement is the number of periods times 20ms |
+| + void setCurrentOn(float onAmpere) | Sets the current limit for "on"               |
+| + bool setx4max(int x4max)   | Sets the ADC value for the maximum current (e.g. 2 A). Simple adjustment of a final value |
+| + void setNumberOf50HzPeriods(int periods)   | Sets the number of 50Hz periods to be measured. The duration of the measurement is the number of periods times 20ms |
 
 &nbsp;
 
-| support points |
+| support points               |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
-| + bool setRefPoints() | Without parameters: Use the default values |
+| + bool setRefPoints()        | Without parameters: Use the default values           |
 | + bool setRefPoints(int num, int xValues[], float yValues[]) | Set the support points; num = number of points |
-| + String getsRefPoints() | Returns the support points as string |
+| + String getsRefPoints()     | Returns the support points as string                 |
 
 &nbsp;
 
-| Other functions | |
+| Other functions              |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
 | + float getCurrent(int ain_code) | Calculates the current value to the given analog in value |
-| + int measure() | Current measurement (number of periods, 20 values per period) |
+| + int measure()              | Current measurement (number of periods, 20 values per period) |
 
