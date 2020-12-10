@@ -1,4 +1,4 @@
-//_____D1_class_CurrentAC.cpp_________________201203-201203_____
+//_____D1_class_CurrentAC.cpp_________________201203-201206_____
 // The class CurrentAC is a class for D1 mini or ESP32 D1mini
 // for measuring AC current using a selfmade shield D1_INA122_V3
 // (with precision instrumentation amplifier INA122P) and a 
@@ -12,9 +12,9 @@
 // (2) Selfmade shield D1_INA122_V3 181108 (Analog In)
 // (3) Current transformer (ASM-010)
 //
-// Created by Karl Hartinger, December 03, 2020.
+// Created by Karl Hartinger, December 06, 2020.
 // Updates:
-// 2020-12-03 New
+// 2020-12-06 add nominal (rated) current (y4nom..)
 // Released into the public domain.
 
 #include "D1_class_CurrentAC.h"
@@ -25,41 +25,46 @@
 
 //_____constructor (default board D1 mini, A0, default ion)_____
 CurrentAC::CurrentAC() {
- int   boardType=1;                    // 1=D1 mini
+ int   boardType=CURRENTAC_BOARD_DEFAULT; // 1=D1 mini
  int   pin=A0;                         // analog in @ D1 mini
  float ion_A=CURRENTAC_A_ON;           // 10W @ 230V
- setup(boardType, ion_A, pin);
+ float inom_A=y4nomD1mini_;            // nominal 2A
+ setup(boardType, inom_A, ion_A, pin);
 }
 
 //_____constructor (default board D1 mini, A0)__________________
-CurrentAC::CurrentAC(float ion_A) {
- int   boardType=1;                    // 1=D1 mini
+CurrentAC::CurrentAC(float inom_A, float ion_A) {
+ int   boardType=CURRENTAC_BOARD_DEFAULT; // 1=D1 mini
  int   pin=A0;                         // analog in @ D1 mini
- setup(boardType, ion_A, pin);
+ setup(boardType, inom_A, ion_A, pin);
 }
 
 //_____constructor (default analog in pin, on current)__________
 CurrentAC::CurrentAC(int boardType) {
  int   pin=A0;                         // analog in @ D1 mini
- if(boardType==2) pin=CURRENTAC_PIN_AIN_ESP; // 2=ESP32 D1 mini
+ float inom_A=y4nomD1mini_;            // nominal 2A
+ if(boardType==2) {
+  pin=CURRENTAC_PIN_AIN_ESP;           // 2=ESP32 D1 mini
+  inom_A=y4nomESP32D1_;                // nominal 2A
+ }
  float ion_A=CURRENTAC_A_ON;           // 10W @ 230V
- setup(boardType, ion_A, pin);
+ setup(boardType, inom_A, ion_A, pin);
 }
 
 //_____constructor (default analog in pin)______________________
-CurrentAC::CurrentAC(int boardType, float ion_A) {
+CurrentAC::CurrentAC(int boardType, float inom_A, float ion_A) {
  int   pin=A0;                         // analog in @ D1 mini
  if(boardType==2) pin=CURRENTAC_PIN_AIN_ESP; // 2=ESP32 D1 mini
- setup(boardType, ion_A, pin);
+ setup(boardType, inom_A, ion_A, pin);
 }
 
 //_____constructor (no default values)__________________________
-CurrentAC::CurrentAC(int boardType, float ion_A, int pin) {
- setup(boardType, ion_A, pin);
+CurrentAC::CurrentAC(int boardType, float inom_A, float ion_A, int pin) {
+ setup(boardType, inom_A, ion_A, pin);
 }
 
 //_____set properties to default values_________________________
-void CurrentAC::setup(int boardType, float ion_A, int pin)
+void CurrentAC::setup(int boardType, float inom_A, float ion_A, int pin)
 {
  a_=0;                                 // start: 0 Ampere
  aOn_=ion_A;                           // limit current "on"
@@ -72,21 +77,23 @@ void CurrentAC::setup(int boardType, float ion_A, int pin)
   iBoard_=boardType;                   // 2=ESP32D1
   ainPin_=pin;                         // several pins allowed 
   ainMax_=CURRENTAC_ADC_MAX12;         // 12bit ADC
-  x4maxDefault_=x4maxESP32D1_;         // x-value for max (2A)
+  x4nomDefault_=x4nomESP32D1_;         // nominal x-value
+  y4nomDefault_=y4nomESP32D1_;         // nominal y-value (2A)
  }
  else
  {//.....default board: Wemos D1 mini...........................
   iBoard_=CURRENTAC_BOARD_DEFAULT;     // 1=D1mini
   ainPin_=CURRENTAC_PIN_AIN_D1;        // A0=17 default D1mini
   ainMax_=CURRENTAC_ADC_MAX10;         // 10bit ADC
-  x4maxDefault_=x4maxD1mini_;          // x-value for max (2A)
+  x4nomDefault_=x4nomD1mini_;          // nominal x-value 
+  y4nomDefault_=y4nomD1mini_;          // nominal y-value (2A)
  }
  //------support points (limits)--------------------------------
- x4max_=x4maxDefault_;
- // set numPoints_, xPoints_, yPoints_
+ x4nom_=x4nomDefault_;
+ if(inom_A>0) y4nom_=inom_A;
+         else y4nom_=y4nomDefault_;
+ //...set properties numPoints_, xPoints_, yPoints_.............
  setRefPoints();                       // use default values
- //------additional properties----------------------------------
- //measuring();                          // measure current
 }
 
 // *************************************************************
@@ -131,32 +138,77 @@ bool CurrentAC::isChange() {
 //_____return current limit for "on"____________________________
 float CurrentAC::getCurrentOn() { return aOn_; }
 
+// return nominal current_______________________________________
+float CurrentAC::getNominalCurrent() { return y4nom_; }
+
 // *************************************************************
 //    set parameter
 // *************************************************************
 
 //_____set current limit for "on"_______________________________
 // e.g. for P=10W: I=P/U=10/230=0,0435A
-void CurrentAC::setCurrentOn(float onAmpere)
+bool CurrentAC::setCurrentOn(float onAmpere)
 {
- if(onAmpere<0) return;
+ if(onAmpere<0) return false;
  aOn_=onAmpere;
+ return true;
+}
+
+//_____set nominal (rated) current______________________________
+// Note: The nominal point is usually not the end point of the 
+// compensation curve, as this is not linear - especially for 
+// high values.
+bool CurrentAC::setNominalCurrent(float inom_A)
+{
+ if(inom_A<=0) return false;
+ y4nom_=inom_A;
+ return true;
 }
 
 //_____set ADC value for maximal current________________________
-bool CurrentAC::setx4max(int x4max)
+bool CurrentAC::setx4nom(int x4nom)
 {
- if(x4max<=0) return false;
- x4max_=x4max;
+ if(x4nom<=0) return false;
+ x4nom_=x4nom;
  return true;
 }
 
 //_____set number of 50Hz periods to measure____________________
 // duration of measurement: periods*20ms
-void CurrentAC::setNumberOf50HzPeriods(int periods)
+bool CurrentAC::setNumberOf50HzPeriods(int periods)
 {
-  if(periods<1 ||periods>1000) return;
+  if(periods<1 ||periods>1000) return false;
   num50HzPeriods_=periods;
+  return true;
+}
+
+//_____set new board type (1=D1mini, 2=ESP32D1)_________________
+// Note: All properties are reset!
+bool CurrentAC::setBoardType(int boardType)
+{
+ int pin=A0;                           // analog in @ D1 mini
+ int inom_A=y4nomD1mini_;              // nominal current D1 mini
+ if(boardType<1 || boardType>2) return false;
+ if(boardType==2) {
+  pin=CURRENTAC_PIN_AIN_ESP; // 2=ESP32 D1 mini
+  inom_A=y4nomESP32D1_;
+ }
+ float ion_A=CURRENTAC_A_ON;           // 10W @ 230V
+ setup(boardType, inom_A, ion_A, pin);
+ return true;
+}
+
+//_____set analog in pin________________________________________
+// D1 mini: only A0 is available!
+// ESP32 mini: more pins available
+bool CurrentAC::setPinAin(int pin)
+{
+ if(iBoard_==CURRENTAC_BOARD_DEFAULT && pin==A0) return true;
+ if(iBoard_==CURRENTAC_BOARD_ESP32D1) {
+  ainPin_=pin;
+  return true;
+ }
+ return false;
 }
 
 // *************************************************************
@@ -248,7 +300,7 @@ float CurrentAC::getCurrent(int ain_code)
  if(ain_code<0) { return 0; }
  //if(ain_code>ainMax_) { return yPoints_[numPoints_-1];}
  long ain1=ain_code;
- if(x4max_!=0) ain1=ain1*x4maxDefault_/x4max_;
+ if(x4nom_!=0) ain1=ain1*x4nomDefault_/x4nom_;
  ain_code=ain1;
  int imax=numPoints_-1;
  for(i=0; i<imax; i++)
@@ -277,7 +329,7 @@ float CurrentAC::getCurrent(int ain_code)
   f1=ain_d + ain_k*ain_code;
   ainLast_=ain_code;
  }
- //if(x4max_!=0) f1=f1*x4maxDefault_/x4max_;
+ if(y4nomDefault_!=0) f1=f1*y4nom_/y4nomDefault_;
  return f1;
 }
 

@@ -16,7 +16,8 @@ _Figure 1: D1 mini with D1_INA122 Shield and connected ASM010 current transforme
 _Figure 2: Circuit of the D1_INA122 Shield for measurement of alternating current up to 2A_   
 
 ### Dimensioning
-After rectifying the operational amplifier output signal, it must be smoothed (kept constant) for the analog-to-digital conversion. This results in the following problem:   
+If one takes a measurement over several periods as the measurement principle, the following problem arises:  
+* After rectifying the operational amplifier output signal, it must be smoothed (kept constant) for the analog-to-digital conversion.   
 * The period of a 50Hz sine signal is 20ms. If you want to measure the current with __one__ read-in process, the voltage must be smoothed very well, i.e. the time constant T = R4 * (C1+C2) must be very large:   
 Example: For a 1% error, a charge time of about 5ms and a discharge time of t1=15ms results in T = -t1/ln(0.99) = 1.492s.   
 But if you switch off the current, it takes a long time until the capacitors C1+C2 have discharged and a "current value" is read in for a very long time, although no current is flowing at all.   
@@ -108,7 +109,7 @@ If you compare the displayed values with the values measured with a multimeter a
 &nbsp;
 
 ## Class `CurrentAC`
-The class `CurrentAC` provides methods for current measurement and property adjustment. Since the relationship between the current and the read-in analog value is not linear (see figure 6), the curve is divided into several linear sections. The points of the curve are stored in two fields (`int xPoints_[]` and `float yPoints_[]`). Default value is a maximum of 20 points (constant `CURRENTAC_POINTS_MAX`).    
+The class `CurrentAC` provides methods for current measurement and property adjustment. Since the relationship between current and read analog value is not linear (see Fig. 6), the curve is divided into several linear sections and a nominal value is defined as the "end point" of the measuring range, which should be approximately 91%..95% of the final value (1023, 4096, ...). The points of the curve are stored in two fields (`int xPoints_[]` and `float yPoints_[]`). Default value is a maximum of 20 points (constant `CURRENTAC_POINTS_MAX`).    
   
 ![D1_INA122 D1mini iAC = f(ain)](./images/D1_INA122_D1mini_iAC_ain.png "D1_INA122  D1mini iAC = f(ain)") &nbsp; ![D1_INA122 ESP32D1 iAC = f(ain)](./images/D1_INA122_ESP32D1_iAC_ain.png "D1_INA122  ESP32D1 iAC = f(ain)")      
 _Figure 7: Relationship between current value iAC and read-in analog value ain: iAC = f(ain)_   
@@ -117,11 +118,11 @@ _Figure 7: Relationship between current value iAC and read-in analog value ain: 
 | Class CurrentAC | Constructors and Co |
 | ---------------------------- | ---------------------------------------------------- |
 | + CurrentAC() | Default constructor. Sets the board type to D1 mini, the ADC pin to A0 and the "on" current to 0.044A (= 10W at 230V). Calls setup() |
-| + CurrentAC(float ion_A) | Constructor. Sets the board type to D1 mini, the ADC pin to A0 and the "on" current to the given value. Calls setup() |
+| + CurrentAC(float inom_A, float ion_A)  | Constructor. Sets the board type to D1 mini, the ADC pin to A0 and the nominal current and "On" current to the given values. Calls setup() |
 | + CurrentAC(int boardType) | Constructor. Sets the board type. Allowed are the values 1=D1mini or 2=ESP32D1. Calls setup() |
-| + CurrentAC(int boardType, float ion_A) | Constructor. Sets the board type and the "on" current to the given value. Calls setup() |
-| + CurrentAC(int boardType, float ion_A, int pin) | Constructor. Sets the board type, the ADC pin, and the "on" current to the given value. Calls setup() |
-| ~ void setup(int boardType, float ion_A, int pin) | Set all properties to default values |
+| + CurrentAC(int boardType, float inom_A, float ion_A) | Constructor. Sets the board type, the nominal current and the "on" current to the given values. Calls setup() |
+| + CurrentAC(int boardType, float inom_A, float ion_A, int pin) | Constructor. Sets the board type, the ADC pin, the nominal current and the "on" current to the given values. Calls setup() |
+| ~ void setup(int boardType, float inom_A, float ion_A, int pin) | Set all properties to default values |
 
 &nbsp;
 
@@ -133,14 +134,19 @@ _Figure 7: Relationship between current value iAC and read-in analog value ain: 
 | + bool isOff()               | true: current is off, i.e. less than or equal to the "On" value (<=aOn_) (L&ouml;st measurement off) |
 | + bool isChange()            | true: &Change of the on/off state since the last query (L&ouml;st measurement off) |
 | + float getCurrentOn()         | current limit for the "on" state |
+| + float getNominalCurrent()    | get the nominal current   |
 
 &nbsp;
 
 | Set parameters               |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
-| + void setCurrentOn(float onAmpere) | Sets the current limit for "on"               |
+| + bool setCurrentOn(float onAmpere) | Sets the current limit for "on"               |
++ bool   setNominalCurrent(float inom_A) | sets the noinal current   |
 | + bool setx4max(int x4max)   | Sets the ADC value for the maximum current (e.g. 2 A). Simple adjustment of a final value |
 | + void setNumberOf50HzPeriods(int periods)   | Sets the number of 50Hz periods to be measured. The duration of the measurement is the number of periods times 20ms |
+| + bool   setBoardType(int boardType)  | sets the uC board type: 1=D1mini, 2=ESP32D1  |
+| + bool   setPinAin(int pin)           | sets the analog in pin (A0 for D1 mini)   |
+
 
 &nbsp;
 

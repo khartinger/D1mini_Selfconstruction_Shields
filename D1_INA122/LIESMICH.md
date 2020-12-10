@@ -1,5 +1,5 @@
 # D1 mini: Eigenbau-Shield D1_INA122
-Version 2020-12-04, Sketches: ESP32D1_CurrentAC_*.ino   
+Version 2020-12-10, Sketches: ESP32D1_CurrentAC_*.ino   
 [--> English version](./README.md "English version")   
 
 Das Eigenbau-Shield __D1_INA122__ dient zur Verst&auml;rkung und Gleichrichtung kleiner Wechselspannungen. Zu diesem Zweck wird ein Pr&auml;zisionsinstrumentenverst&auml;rker INA122P und eine Gleichrichterdiode BAT48 eingesetzt.   
@@ -16,7 +16,8 @@ _Bild 1: D1 mini mit D1_INA122 Shield und angestecktem ASM010 Stromwandler (rech
 _Bild 2: Schaltung des D1_INA122 Shields zur Messung von Wechselstr&ouml;men bis 2A_   
 
 ### Dimensionierung
-Nach der Gleichrichtung des Operationsverst&auml;rker-Ausgangssignals muss dieses f&uuml;r die Analog-Digital-Wandlung gegl&auml;ttet (konstant gehalten) werden. Dabei ergibt sich folgendes Problem:   
+Wenn man als Messprinzip eine Messung &uuml;ber mehrere Perioden nimmt, ergibt sich folgendes Problem:
+* Nach der Gleichrichtung des Operationsverst&auml;rker-Ausgangssignals muss dieses f&uuml;r die Analog-Digital-Wandlung gegl&auml;ttet (konstant gehalten) werden.
 * Die Periodendauer eines 50Hz-Sinus-Signals betr&auml;gt 20ms. Will man mit __einem__ Einlesevorgang die H&ouml;he des Stromes erfassen, muss die Spannung sehr gut gegl&auml;ttet werden, das hei&szlig;t, die Zeitkonstante T = R4 * (C1+C2) muss sehr gro&szlig; sein:   
 Beispiel: F&uuml;r 1% Fehler ergibt sich bei ca. 5ms Ladezeit und t1=15ms Entladezeit T = -t1/ln(0,99) = 1,492s.   
 Schaltet man dann aber den Strom ab, dauert es entsprechend lange, bis sich die Kondensatoren C1+C2 entladen haben und es wird sehr lange ein "Stromwert" eingelesen, obwohl gar kein Strom mehr flie&szlig;t.   
@@ -107,7 +108,7 @@ Vergleicht man die angezeigten Werte mit den mit einem Multimeter gemessenen Wer
 &nbsp;
 
 ## Die Klasse `CurrentAC`
-Die Klasse `CurrentAC` stellt Methoden zur Strommessung und zum Anpassen der Eigenschaften zur Verf&uuml;gung. Da der Zusammenhang zwischen Strom und eingelesenem Analogwert nicht linear ist (siehe Bild 6), wird die Kurve in mehrere lineare Abschnitte unterteilt. Die St&uuml;tzpunkte der Kurve werden in zwei Feldern gespeichert (`int xPoints_[]` und `float yPoints_[]`). Vorgabewert ist maximal 20 Punkte (Konstante `CURRENTAC_POINTS_MAX`).     
+Die Klasse `CurrentAC` stellt Methoden zur Strommessung und zum Anpassen der Eigenschaften zur Verf&uuml;gung. Da der Zusammenhang zwischen Strom und eingelesenem Analogwert nicht linear ist (siehe Bild 6), wird die Kurve in mehrere lineare Abschnitte unterteilt und als "Endpunkt" des Messbereichs ein Nennwert (Nominalwert) definiert, der zirka bei 91%..95% des Endwertes (1023, 4096, ...) liegen sollte. Die St&uuml;tzpunkte der Kurve werden in zwei Feldern gespeichert (`int xPoints_[]` und `float yPoints_[]`). Vorgabewert ist maximal 20 Punkte (Konstante `CURRENTAC_POINTS_MAX`).     
 ![D1_INA122 D1mini iAC = f(ain)](./images/D1_INA122_D1mini_iAC_ain.png "D1_INA122  D1mini iAC = f(ain)") &nbsp; ![D1_INA122 ESP32D1 iAC = f(ain)](./images/D1_INA122_ESP32D1_iAC_ain.png "D1_INA122  ESP32D1 iAC = f(ain)")      
 _Bild 7: Zusammenhang zwischen Stromwert iAC und eingelesenem Analogwert ain: iAC = f(ain)_   
 
@@ -115,11 +116,11 @@ _Bild 7: Zusammenhang zwischen Stromwert iAC und eingelesenem Analogwert ain: iA
 | Klasse CurrentAC             | Konstruktoren und Co                                 |
 | ---------------------------- | ---------------------------------------------------- |
 | + CurrentAC()                | Vorgabekonstruktor. Setzt den Board-Typ auf D1 mini, den ADC-Pin auf A0 und den "On"-Strom auf 0,044A (= 10W an 230V). Ruft setup() auf |
-| + CurrentAC(float ion_A)     | Konstruktor. Setzt den Board-Typ auf D1 mini, den ADC-Pin auf A0 und den "On"-Strom auf den gegebenen Wert. Ruft setup() auf |
+| + CurrentAC(float inom_A, float ion_A)     | Konstruktor. Setzt den Board-Typ auf D1 mini, den ADC-Pin auf A0 und den Nominalstrom sowie "On"-Strom auf die gegebenen Werte. Ruft setup() auf |
 | + CurrentAC(int boardType)   | Konstruktor. Setzt den Board-Typ. Erlaubt sind die Werte 1=D1mini oder 2=ESP32D1. Ruft setup() auf |
-| + CurrentAC(int boardType, float ion_A)   | Konstruktor. Setzt den Board-Typ und den "On"-Strom auf den gegebenen Wert. Ruft setup() auf |
-| + CurrentAC(int boardType, float ion_A, int pin)    | Konstruktor. Setzt den Board-Typ, den ADC-Pin und den "On"-Strom auf den gegebenen Wert. Ruft setup() auf |
-| ~ void setup(int boardType, float ion_A, int pin)   | Setzt alle Eigenschaften auf die Vorgabewerte   |
+| + CurrentAC(int boardType, float inom_A, float ion_A)   | Konstruktor. Setzt den Board-Typ, den Nennstrom und den "On"-Strom auf die gegebenen Werte. Ruft setup() auf |
+| + CurrentAC(int boardType, float inom_A, float ion_A, int pin)    | Konstruktor. Setzt den Board-Typ, den ADC-Pin, den Nennstro und den "On"-Strom auf die gegebenen Werte. Ruft setup() auf |
+| ~ void setup(int boardType, float inom_A, float ion_A, int pin)   | Setzt alle Eigenschaften auf die Vorgabewerte   |
 
 &nbsp;
 
@@ -131,14 +132,19 @@ _Bild 7: Zusammenhang zwischen Stromwert iAC und eingelesenem Analogwert ain: iA
 | + bool   isOff()             | true: Strom ist aus, d.h. kleiner oder gleich dem "On"-Wert (<=aOn_) (L&ouml;st Messung aus)   |
 | + bool   isChange()          | true: &Auml;nderung des Ein-/Aus-Zustands seit der letzten Abfrage (L&ouml;st Messung aus)   |
 | + float  getCurrentOn()      | Strom-Limit f&uuml;r den "On"-Zustand   |
+| + float  getNominalCurrent() | Abfrage des Strom-Normwerts   |
 
 &nbsp;
 
 | Setzen von Parametern        |                                                      |
 | ---------------------------- | ---------------------------------------------------- |
-| + void   setCurrentOn(float onAmpere)   | Setzt das Strom-Limit f&uuml;r "on"   |
+| + bool   setCurrentOn(float onAmpere)   | Setzt das Strom-Limit f&uuml;r "on"   |
+| + bool   setNominalCurrent(float inom_A)   | Setzt den Nennstrom (Nominalwert)  | 
 | + bool   setx4max(int x4max)            | Setzt den ADC-Wert f&uuml;r den maximalen Strom (zB 2 A). Einfache Anpassung eines Endwertes |
 | + void   setNumberOf50HzPeriods(int periods)   | Setzt die Anzahl der 50Hz-Perioden, die gemessen werden sollen. Die Dauer der Messung ist die Anzahl Perioden mal 20ms   |
+| + bool   setBoardType(int boardType)  | Setzt den uC-Board-Typ: 1=D1mini, 2=ESP32D1  |
+| + bool   setPinAin(int pin)           | Setzt den Analog In Pin (A0 beim D1 Mini)   |
+
 
 &nbsp;
 
