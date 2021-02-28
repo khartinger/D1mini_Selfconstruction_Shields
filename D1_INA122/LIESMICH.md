@@ -57,7 +57,7 @@ Da die Kondensatoren C1+C2 bis auf die Ausgangsspannung des INA122 aufgeladen we
 |  1  | R3         |  47k&#8486; (82k&#8486; f&uuml;r ESP32 D1 mini) f&uuml;r 2A | 0204   |
 |  1  | R6         |  20k&#8486;     | TRIMMER_CA6H stehend |
 |  1  | D2         | BAT48           | DO35_STEHEND_K_UNTEN |
-|  1  | C1         | 1µF             | D5R2,54_ELKO         |
+|  1  | C1         | 1&micro;F             | D5R2,54_ELKO         |
 |  2  | C2, C3     | 100nF           | 4X8R5,08             |
 | --- | ---------- | --------------- | -------------------- |
 |  1  | IC2        | 8polige Fassung | DIL8                 |
